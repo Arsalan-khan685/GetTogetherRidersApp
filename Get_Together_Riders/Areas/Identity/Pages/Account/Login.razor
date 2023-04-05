@@ -1,0 +1,32 @@
+﻿@page "/Login"
+@using Get_Together_Riders.Data;
+
+<h3>Login</h3>
+
+<div class="card w-50 h-50">
+    <div class="card-body ">
+        <div class="form-group">
+            <label class="control-label">User Name </label>
+            <input class="form-control" @bind="_user.UserName" />
+        </div>
+     
+        <div class="form-group">
+            <label class="control-label">Password</label>
+            <input class="form-control" @bind="_user.Password" />
+        </div>
+    </div>
+    <div class="card-footer ">
+        <input type="button" class="btn btn-primary" @onclick="@LoginUser" value="Login" />   
+    </div>
+</div>
+
+@code {
+    ClsUser _user = new ClsUser();
+    public void LoginUser()
+    {
+        //if(_user.GetUser(_user) > 0)
+        //{
+            
+        //}
+    }
+}

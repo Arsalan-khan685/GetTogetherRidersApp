@@ -1,0 +1,213 @@
+﻿@page "/CreateRide"
+@inject IWebHostEnvironment env;
+@using Get_Together_Riders.Data;
+@using Microsoft.AspNetCore.Components.Authorization;
+@using Microsoft.AspNetCore.Components;
+@using Microsoft.AspNetCore.Identity.UI.Services;
+@using Microsoft.AspNetCore.Identity;
+@inject UserManager<IdentityUser> _userManager;
+@inject SignInManager<IdentityUser> _signInManager;
+
+<h3>Add Ride</h3>
+
+<div class="card">
+    <div class="card-header">
+        <h2>Add Employee</h2>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group" hidden="hidden">
+                    <label class="control-label">Event ID</label>
+                    <input class="form-control " @bind="_rideEvent.EventID" />
+                </div>
+                <div class="form-group">
+                    <label class="control-label">Ride Event Name </label>
+                    <input class="form-control " @bind="_rideEvent.EventName" />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="control-label">Description </label>
+                    <input class="form-control disabled" @bind="_rideEvent.Description" />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="from-group">
+                    <label class="control-label">Category</label>
+                    <select class="form-control" @bind="_rideEvent.EventCategory">
+                        <option value="0" selected>Select Category</option>
+                        <option value="GTR8">GTR8</option>
+                        <option value="GTR10">GTR10</option>
+                        <option value="GTR12">GTR12</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="control-label">Start Date</label>
+                 @*   <InputDate @bind="_rideEvent.StartDate"></InputDate>*@
+                    <input class="form-control" type="date" @bind="_rideEvent.StartDate" />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="control-label">End Date</label>
+                    <input class="form-control" type="date" @bind="_rideEvent.EndDate" />
+                </div>
+            </div>
+            <div class="col-md-4" hidden="hidden">
+                <div class="form-group">
+                    <input class="form-control" @bind="_rideEvent.User_ID" />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="control-label">Created By</label>
+                    <input class="form-control" @bind="_rideEvent.User_Name" />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="control_lable">Cover Photo</label>
+                    <InputFile OnChange="@OnInputFileChange" multiple />
+                    <table>
+                        <tr>
+                            @foreach (var imgsrc in ImageUrls)
+                            {
+                                <td><img src="@imgsrc" /></td>
+                            }
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-group">
+                    <label class="control_lable">Select Event Photo</label>
+                    <InputFile OnChange="@OnInputFileChange2" multiple />
+                    <table>
+                        <tr>
+                            @foreach (var imgsrc in ImageUrls2)
+                            {
+                                <td><img src="@imgsrc" /></td>
+                            }
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-footer">
+        <div class="row">
+            <div class="col-md-4">
+                <input type="button" class="btn btn-primary" @onclick="@SaveRideEvent" value="Save" />
+            </div>
+        </div>
+    </div>
+</div>
+@code
+{
+    [CascadingParameter]
+    private Task<AuthenticationState>? authenticationStateTask { get; set; }
+    List<ClsRideEvents> _listOfEvents = new List<ClsRideEvents>();
+    ClsRideEvents _rideEvent = new ClsRideEvents();
+    List<ClsUser> _listOfUsers = new List<ClsUser>();
+    ClsUser _user = new ClsUser();
+    // List<ClsUser> obj = new List<ClsUser>();
+    List<ClsUser> _Users = new List<ClsUser>();
+    IReadOnlyList<IBrowserFile>? selectedFiles;
+    List<string> ImageUrls = new List<string>();
+    public string? Message { get; set; }
+    IReadOnlyList<IBrowserFile>? selectedFiles2;
+    List<string> ImageUrls2 = new List<string>();
+    public string? Message2 { get; set; }
+    protected override async void OnInitialized()
+    {
+        var user = (await authenticationStateTask).User;
+        if (user.Identity.IsAuthenticated)
+        {
+            var curruser = await _userManager.GetUserAsync(user);
+            var curruserid = curruser.Id;
+            _user = _user.GetUserByID(curruserid);
+            string username = _user.UserName;
+            int u_id = _user.UserID;
+            _rideEvent.User_Name = username;
+            _rideEvent.User_ID = u_id;
+        }
+        _rideEvent.StartDate = DateTime.Now;
+        _rideEvent.EndDate = DateTime.Now;
+        await base.OnInitializedAsync();
+    }
+
+    public async Task SaveRideEvent()
+    {
+        Stream stream = selectedFiles.FirstOrDefault().OpenReadStream();
+        MemoryStream ms = new MemoryStream();
+        await stream.CopyToAsync(ms);
+        _rideEvent.CoverPhotoFileName = selectedFiles.FirstOrDefault().Name;
+        _rideEvent.CoverPhotoFileContent = ms.ToArray();
+        stream.Close();
+        _rideEvent.CoverPhotoUrl = @"Images/" + _rideEvent.CoverPhotoFileName + ".png";
+        var path = $"{env.WebRootPath}\\Images\\{_rideEvent.CoverPhotoFileName + ".png"}";
+        var fs = System.IO.File.Create(path);
+        fs.Write(_rideEvent.CoverPhotoFileContent, 0, _rideEvent.CoverPhotoFileContent.Length);
+        fs.Close();
+        string uploadsFolder = Path.Combine(env.WebRootPath, "Images");
+
+        Stream stream2 = selectedFiles2.FirstOrDefault().OpenReadStream();
+        MemoryStream ms2 = new MemoryStream();
+        await stream2.CopyToAsync(ms);
+        _rideEvent.RideEventPhotoFileName = selectedFiles2.FirstOrDefault().Name;
+        _rideEvent.RideEventPhotoFileContent = ms2.ToArray();
+        stream.Close();
+        _rideEvent.RideEventPhotoUrl = @"Images/" + _rideEvent.RideEventPhotoFileName + ".png";
+        var path2 = $"{env.WebRootPath}\\Images\\{_rideEvent.RideEventPhotoFileName + ".png"}";
+        var fs2 = System.IO.File.Create(path);
+        fs2.Write(_rideEvent.RideEventPhotoFileContent, 0, _rideEvent.RideEventPhotoFileContent.Length);
+        fs2.Close();
+        string uploadsFolder2 = Path.Combine(env.WebRootPath, "Images");
+
+        if (_rideEvent.SaveRideEvent(_rideEvent) > 0)
+        {
+            _rideEvent = new ClsRideEvents();
+            _rideEvent.CoverPhotoFileContent = null;
+            _rideEvent.RideEventPhotoFileContent = null;
+        }
+    }
+
+    private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        selectedFiles = e.GetMultipleFiles();
+        _rideEvent.CoverPhotoFileName = string.Empty;
+        foreach (var imageFile in selectedFiles)
+        {
+            var resizedImage = await imageFile.RequestImageFileAsync("image/jpg", 100, 100);
+            var buffer = new byte[resizedImage.Size];
+            await resizedImage.OpenReadStream().ReadAsync(buffer);
+            var imageData = $"data:image/jpg;base64,{Convert.ToBase64String(buffer)}";
+            ImageUrls.Add(imageData);
+            _rideEvent.CoverPhotoFileName = imageData;
+        }
+        Message = $"{selectedFiles.Count} file(s) selected";
+        this.StateHasChanged();
+    }
+    private async Task OnInputFileChange2(InputFileChangeEventArgs e)
+    {
+        selectedFiles2 = e.GetMultipleFiles();
+        _rideEvent.RideEventPhotoFileName = string.Empty;
+        foreach (var imageFile in selectedFiles2)
+        {
+            var resizedImage = await imageFile.RequestImageFileAsync("image/jpg", 100, 100);
+            var buffer = new byte[resizedImage.Size];
+            await resizedImage.OpenReadStream().ReadAsync(buffer);
+            var imageData = $"data:image/jpg;base64,{Convert.ToBase64String(buffer)}";
+            ImageUrls2.Add(imageData);
+            _rideEvent.RideEventPhotoFileName = imageData;
+        }
+        Message2 = $"{selectedFiles2.Count} file(s) selected";
+        this.StateHasChanged();
+    }
+
+}
+
+   

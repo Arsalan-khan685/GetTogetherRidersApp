@@ -1,0 +1,73 @@
+﻿@page "/myrides"
+@using Get_Together_Riders.Data;
+@using Microsoft.AspNetCore.Components.Authorization;
+@using Microsoft.AspNetCore.Components;
+@using Microsoft.AspNetCore.Identity.UI.Services;
+@using Microsoft.AspNetCore.Identity;
+@inject UserManager<IdentityUser> _userManager;
+@inject SignInManager<IdentityUser> _signInManager;
+
+<h3>MyRides</h3>
+
+<div class="card">
+
+    <div class="card-header">
+        <h2>My Rides</h2>
+    </div>
+    <div class="card-body">
+        @{
+            var sno = 1;
+        }
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>S.No </th>
+                    @*<td>Event ID </td>*@
+                    <th>Event Name</th>
+                    <th>Description</th>
+                    <th>Event Category</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>                  
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var temp in _listOfRides)
+                {
+                        <tr>
+                            <td>@sno</td>
+                            <td hidden="hidden">@temp.EventID</td>
+                            <td>@temp.EventName</td>
+                            <td>@temp.Description</td>
+                            <td>@temp.EventCategory</td>
+                            <td>@temp.StartDate</td>
+                            <td>@temp.EndDate</td>                       
+                        </tr>
+                    sno++;
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? authenticationStateTask { get; set; }
+    List<ClsRideEvents> _listOfRides = new List<ClsRideEvents>();
+    ClsRideEvents _rideEvents = new ClsRideEvents();
+    ClsUser _user = new ClsUser();
+
+    protected override async void OnInitialized()
+    {
+        var user = (await authenticationStateTask).User;
+        if (user.Identity.IsAuthenticated)
+        {
+            var curruser =await _userManager.GetUserAsync(user);
+            var curruserid = curruser.Id;
+            _user = _user.GetUserByID(curruserid);
+            int u_id = _user.UserID;
+            _listOfRides =_rideEvents.GetRideEventByUser(u_id);
+        }
+        await base.OnInitializedAsync();
+    }
+}

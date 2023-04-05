@@ -1,0 +1,160 @@
+﻿@page "/Rides"
+@using Get_Together_Riders.Data;
+@using Microsoft.AspNetCore.Components.Authorization;
+@using Microsoft.AspNetCore.Components;
+@using Microsoft.AspNetCore.Identity.UI.Services;
+@using Microsoft.AspNetCore.Identity;
+@inject UserManager<IdentityUser> _userManager;
+@inject SignInManager<IdentityUser> _signInManager;
+
+<style>
+    .modal{
+        display : block !important;
+    }
+</style>
+
+<h3>RidesList</h3>
+
+<div>
+   @* <button></button>*@
+    <a href="/CreateRide">Create Ride</a>
+</div>
+
+
+<div class="card">
+    <div class="card-header">
+        <h2>Event List</h2>
+    </div>
+    <div class="card-body">
+        @{
+            var sno = 1;
+        }
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>S.No </th>
+                    @*<td>Event ID </td>*@
+                    <th>Event Name</th>
+                    <th>Description</th>
+                    <th>Event Category</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Created By</th>
+                    <th>List of Users</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var temp in _listOfRides)
+                {
+                    <tr>
+                        <td>@sno</td>
+                        <td hidden="hidden">@temp.EventID</td>
+                        <td>@temp.EventName</td>
+                        <td>@temp.Description</td>
+                        <td>@temp.EventCategory</td>
+                        <td>@temp.StartDate</td>
+                        <td>@temp.EndDate</td>
+                        <td hidden="hidden">@temp.User_ID</td>
+                        <td>@temp.User_Name</td>
+                        <td>
+                            @*<a href="/" @onclick="() => UserList(temp)" class="link-info text-decoration-none">Users</a>*@
+                            <input type="button" class="btn btn-info" @onclick="() => UserList(temp)" value="Users" /></td>
+                        <td>
+                            <input type="button" class="btn btn-primary" @onclick="() => Register(temp)" value="Register" />
+                       @*   <input type="button" class="btn btn-danger" @onclick="() => DeleteEmployee(temp)" value="Delete" />  *@
+
+                        </td>
+                    </tr>
+                    sno++;
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+@if (showpopup == true)
+{
+    <div class="modal">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Users List</h5>
+                    <span aria-hidden="true" class="close" @onclick="ToggleSuccessPopup">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>User Name</th>
+                                <th>Bike Model</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var temp in _listOfUsers)
+                            {
+                                <tr>
+                                    <td>@temp.UserName</td>
+                                    <td>@temp.BikeModel</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <input type="button" class="btn btn-primary" value="Close" @onclick="ToggleSuccessPopup" />
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? authenticationStateTask { get; set; }
+    List<ClsRideEvents> _listOfRides = new List<ClsRideEvents>();
+    ClsRideEvents _rideEvents = new ClsRideEvents();
+    List<ClsUser> _listOfUsers = new List<ClsUser>();
+    ClsUser _user = new ClsUser();
+
+    public bool showpopup { get; set; }
+
+    protected override async void OnInitialized()
+    {
+        var user = (await authenticationStateTask).User;
+        if (user.Identity.IsAuthenticated)
+        {
+            var curruser = await _userManager.GetUserAsync(user);
+            var curruserid = curruser.Id;
+            _user = _user.GetUserByID(curruserid);
+        }      
+        GetRideEvent();
+        base.OnInitializedAsync();
+    }
+    public void GetRideEvent()
+    {
+        _listOfRides = _rideEvents.GetRideEvent();
+    }
+    public void Register(ClsRideEvents e)
+    {
+        _rideEvents = e;
+        _rideEvents.User_ID = _user.UserID;
+        int res = _rideEvents.RegisterForEvent(e);
+        if (res > 0)
+        {
+            GetRideEvent();
+        }
+    }
+    public void UserList(ClsRideEvents ev) 
+    {
+        int eventid = ev.EventID;
+        _listOfUsers = _rideEvents.RideEventUsers(eventid);
+
+        ToggleSuccessPopup();
+
+    }
+    private void ToggleSuccessPopup()
+    {
+        showpopup = showpopup == true ? false : true;
+    }
+
+}
